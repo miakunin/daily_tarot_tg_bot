@@ -1,0 +1,1 @@
+# daily_tarot_tg_bot
