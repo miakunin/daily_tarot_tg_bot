@@ -151,6 +151,10 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# Data Files (содержат статистику использований)
+bot/data/users/users_data.json
+bot/data/users/users_data_backup_*.json
+
 # Pyre type checker
 .pyre/
 
