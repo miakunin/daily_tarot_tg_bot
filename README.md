@@ -38,7 +38,7 @@ Telegram бот для ежедневных предсказаний Таро с
 
 ### 1. Клонировать репозиторий
 ```bash
-git clone https://github.com/yourusername/tarot-fortune-bot.git
+git clone https://github.com/miakunin/tarot-fortune-bot.git
 cd tarot-fortune-bot
 ```
 
@@ -287,9 +287,8 @@ MIT выбрана для максимальной доступности и п�
 
 ## 📞 Поддержка
 
-- 🐛 [Issues](https://github.com/yourusername/tarot-fortune-bot/issues) - для багов и предложений
-- 💬 [Discussions](https://github.com/yourusername/tarot-fortune-bot/discussions) - для вопросов
-- 📧 Email: your.email@example.com
+- 🐛 [Issues](https://github.com/miakunin/tarot-fortune-bot/issues) - для багов и предложений
+- 💬 [Discussions](https://github.com/miakunin/tarot-fortune-bot/discussions) - для вопросов
 
 ---
 
