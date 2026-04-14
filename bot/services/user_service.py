@@ -48,21 +48,22 @@ class UserService:
         """Сохранить пользователя"""
         self.db.save_user_data(user.user_id, user.to_dict())
     
-    def can_get_fortune(self, user_id: int) -> bool:
-        """Проверить, может ли пользователь получить предсказание"""
-        user = self.get_user(user_id)
-        return user.can_get_fortune_today
-    
-    def update_fortune_date(self, user_id: int, first_name: Optional[str] = None):
-        """Обновить дату последнего предсказания"""
+    def record_fortune(self, user_id: int, first_name: Optional[str] = None) -> Dict[str, Any]:
+        """Обновить дату предсказания и вернуть статистику за одну операцию"""
         user = self.get_user(user_id, first_name)
         user.update_fortune_date()
         self._save_user(user)
         logger.info(f"🔮 Пользователь {user_id} получил предсказание")
-    
+        return self.user_stats(user)
+
     def get_user_stats(self, user_id: int) -> Dict[str, Any]:
         """Получить статистику пользователя"""
         user = self.get_user(user_id)
+        return self.user_stats(user)
+
+    @staticmethod
+    def user_stats(user: User) -> Dict[str, Any]:
+        """Сформировать словарь статистики из объекта User"""
         return {
             'total_fortunes': user.total_fortunes,
             'last_fortune_date': user.last_fortune_date,
@@ -108,6 +109,13 @@ class UserService:
                 'message': f'Ошибка сброса: {e}'
             }
     
+    def toggle_ai(self, user_id: int, first_name: Optional[str] = None) -> bool:
+        """Переключить AI режим для пользователя. Возвращает новое значение."""
+        user = self.get_user(user_id, first_name)
+        user.use_ai = not user.use_ai
+        self._save_user(user)
+        return user.use_ai
+
     def is_admin(self, user_id: int) -> bool:
         """Проверить права администратора"""
         return self.config.admin_configured and user_id == self.config.admin_id

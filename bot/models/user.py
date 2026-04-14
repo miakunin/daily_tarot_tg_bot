@@ -10,12 +10,13 @@ from typing import Optional
 @dataclass
 class User:
     """Модель пользователя бота"""
-    
+
     user_id: int
     last_fortune_date: Optional[str] = None
     total_fortunes: int = 0
     first_name: Optional[str] = None
     created_at: Optional[str] = None
+    use_ai: bool = True
     
     def __post_init__(self):
         """Инициализация после создания"""
@@ -48,7 +49,8 @@ class User:
             last_fortune_date=data.get('last_fortune_date'),
             total_fortunes=data.get('total_fortunes', 0),
             first_name=data.get('first_name'),
-            created_at=data.get('created_at')
+            created_at=data.get('created_at'),
+            use_ai=data.get('use_ai', True),
         )
     
     def get_stats_text(self) -> str:

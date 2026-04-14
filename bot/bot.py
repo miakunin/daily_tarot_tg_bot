@@ -48,7 +48,7 @@ class TarotBot:
         basic_handlers = BasicHandlers(self.config, self.user_service)
         fortune_handlers = FortuneHandlers(self.config, self.fortune_service)
         stats_handlers = StatsHandlers(self.config, self.user_service)
-        ai_handlers = AIHandlers(self.config, self.ai_service)
+        ai_handlers = AIHandlers(self.config, self.ai_service, self.user_service)
         admin_handlers = AdminHandlers(self.config, self.user_service)
         message_handlers = MessageHandlers(self.config)
         

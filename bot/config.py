@@ -31,20 +31,16 @@ class Config:
             except ValueError:
                 self.admin_id = None
         
-        # Настройки AI
-        self.use_ai_interpretations = bool(self.gemini_api_key)
-        
         # База данных - используем существующую bot/data/
         self.data_dir = os.path.join('bot', 'data', 'users')
         self.user_data_file = os.path.join(self.data_dir, 'users_data.json')
         
         # Приоритет моделей Gemini
         self.gemini_models = [
+            'gemini-2.0-flash',
+            'gemini-2.0-flash-lite',
             'gemini-1.5-flash',
-            'gemini-1.5-pro', 
-            'gemini-pro',
-            'models/gemini-1.5-flash',
-            'models/gemini-1.5-pro'
+            'gemini-1.5-pro',
         ]
     
     @property
@@ -63,5 +59,5 @@ class Config:
             'bot_configured': bool(self.bot_token),
             'ai_available': self.ai_available,
             'admin_configured': self.admin_configured,
-            'ai_enabled': self.use_ai_interpretations and self.ai_available
+            'ai_enabled': self.ai_available
         }

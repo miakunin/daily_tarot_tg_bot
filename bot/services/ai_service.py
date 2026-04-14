@@ -22,16 +22,15 @@ class AIService:
     def __init__(self, config: Config):
         """Инициализация AI сервиса"""
         self.config = config
-        self.use_ai = False
-        
+        self._initialized = False
+
         if GEMINI_AVAILABLE and config.gemini_api_key:
             try:
                 genai.configure(api_key=config.gemini_api_key)
-                self.use_ai = config.use_ai_interpretations
+                self._initialized = True
                 logger.info("🤖 Google Gemini API инициализирован")
             except Exception as e:
                 logger.error(f"❌ Ошибка инициализации Gemini: {e}")
-                self.use_ai = False
         else:
             if not GEMINI_AVAILABLE:
                 logger.warning("⚠️ Google Generative AI не установлен")
@@ -40,7 +39,7 @@ class AIService:
     
     async def generate_interpretation(self, card_name: str, user_name: Optional[str] = None) -> Optional[str]:
         """Генерировать AI толкование карты"""
-        if not self.use_ai:
+        if not self.ai_available:
             return None
         
         try:
@@ -51,13 +50,15 @@ class AIService:
 
 Требования:
 - Тон: мистический, мудрый, но доброжелательный
-- Длина: 2-3 предложения
-- Включи практический совет для сегодняшнего дня
+- Длина: 6-8 предложений (полноценное толкование)
 - Используй красивые эмоджи (🌟✨🔮💫🌙)
 - Пиши на русском языке
 - Избегай негативных предсказаний, даже для "сложных" карт
 
-Пример структуры: "🌟 [Краткое значение карты]. [Что это означает для сегодня]. ✨ [Практический совет]."
+Структура толкования:
+1. Общее значение карты и её энергия (2 предложения)
+2. Что это означает для сегодняшнего дня: любовь, работа или личностный рост (2-3 предложения)
+3. Практический совет и напутствие на день (2 предложения)
 
 Карта: {card_name}
 
@@ -70,7 +71,7 @@ class AIService:
                     
                     generation_config = genai.types.GenerationConfig(
                         temperature=0.8,
-                        max_output_tokens=200,
+                        max_output_tokens=500,
                         top_p=0.9,
                         top_k=40
                     )
@@ -127,22 +128,7 @@ class AIService:
             logger.error(f"❌ Ошибка получения моделей: {e}")
             return []
     
-    def toggle_ai(self) -> bool:
-        """Переключить использование AI"""
-        if not GEMINI_AVAILABLE or not self.config.gemini_api_key:
-            return False
-        
-        self.use_ai = not self.use_ai
-        status = "включены" if self.use_ai else "выключены"
-        logger.info(f"🔄 AI толкования {status}")
-        return self.use_ai
-    
     @property
     def ai_available(self) -> bool:
-        """Проверить доступность AI"""
-        return GEMINI_AVAILABLE and bool(self.config.gemini_api_key)
-    
-    @property
-    def ai_enabled(self) -> bool:
-        """Проверить включение AI"""
-        return self.use_ai and self.ai_available
+        """Проверить доступность AI (ключ настроен и библиотека установлена)"""
+        return self._initialized

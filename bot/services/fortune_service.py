@@ -33,15 +33,15 @@ class FortuneService:
         """Вытянуть случайную карту из колоды"""
         return random.choice(self.cards)
     
-    async def generate_fortune_message(self, card: TarotCard, user_name: Optional[str] = None) -> str:
+    async def generate_fortune_message(self, card: TarotCard, user_name: Optional[str] = None, use_ai: bool = True) -> str:
         """Сгенерировать сообщение с предсказанием"""
-        # Попробовать получить AI толкование
-        if self.ai_service.ai_enabled:
+        # Попробовать получить AI толкование если пользователь хочет и AI доступен
+        if use_ai and self.ai_service.ai_available:
             ai_interpretation = await self.ai_service.generate_interpretation(card.name, user_name)
-            
+
             if ai_interpretation:
                 return self._format_ai_fortune(card, ai_interpretation)
-        
+
         # Fallback на классическое толкование
         return self._format_classic_fortune(card)
     
@@ -63,34 +63,34 @@ class FortuneService:
     
     async def get_daily_fortune(self, user_id: int, first_name: Optional[str] = None) -> dict:
         """Получить ежедневное предсказание для пользователя"""
-        # Проверить возможность получения предсказания
-        if not self.user_service.can_get_fortune(user_id):
-            user_stats = self.user_service.get_user_stats(user_id)
+        # Загрузить пользователя один раз для проверки
+        user = self.user_service.get_user(user_id, first_name)
+
+        if not user.can_get_fortune_today:
             return {
                 'success': False,
                 'type': 'already_used',
-                'stats': user_stats
+                'stats': UserService.user_stats(user)
             }
-        
+
         # Вытянуть карту
         card = self.draw_random_card()
-        
-        # Обновить данные пользователя
-        self.user_service.update_fortune_date(user_id, first_name)
-        
-        # Сгенерировать предсказание
-        fortune_message = await self.generate_fortune_message(card, first_name)
-        
-        # Получить обновлённую статистику
-        updated_stats = self.user_service.get_user_stats(user_id)
-        
+
+        # Сгенерировать предсказание ДО обновления даты,
+        # чтобы при ошибке AI пользователь не потерял попытку
+        use_ai = user.use_ai and self.ai_service.ai_available
+        fortune_message = await self.generate_fortune_message(card, first_name, use_ai=use_ai)
+
+        # Обновить дату и получить статистику за одну операцию (1 read + 1 write)
+        updated_stats = self.user_service.record_fortune(user_id, first_name)
+
         return {
             'success': True,
             'type': 'new_fortune',
             'card': card,
             'message': fortune_message,
             'stats': updated_stats,
-            'ai_used': self.ai_service.ai_enabled
+            'ai_used': use_ai
         }
     
     def get_waiting_message(self, user_name: str, stats: dict) -> str:

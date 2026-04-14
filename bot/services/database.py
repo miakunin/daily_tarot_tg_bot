@@ -18,6 +18,8 @@ class Database:
     def __init__(self, filename: str):
         """Инициализация базы данных"""
         self.filename = filename
+        # Создать директорию если не существует
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         logger.info(f"💾 Database инициализирована: {filename}")
     
     def load_all_data(self) -> Dict[str, Dict[str, Any]]:
