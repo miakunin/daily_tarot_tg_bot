@@ -153,7 +153,9 @@ dmypy.json
 
 # Data Files (содержат статистику использований)
 bot/data/users/users_data.json
-bot/data/users/users_data_backup_*.json
+bot/data/users/backups/
+# Старые бэкапы, которые могли попасть в корень до рефакторинга
+/users_data_backup_*.json
 
 # Pyre type checker
 .pyre/

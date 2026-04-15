@@ -72,19 +72,20 @@ class Database:
     
     def reset_with_backup(self) -> str:
         """Сбросить базу данных с созданием бэкапа"""
-        backup_filename = ""
-        
+        backup_path = ""
+
         if os.path.exists(self.filename):
-            # Создать бэкап
+            backup_dir = os.path.join(os.path.dirname(self.filename), 'backups')
+            os.makedirs(backup_dir, exist_ok=True)
+
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            backup_filename = f"users_data_backup_{timestamp}.json"
-            shutil.copy(self.filename, backup_filename)
-            
-            # Удалить оригинальный файл
+            backup_path = os.path.join(backup_dir, f"users_data_backup_{timestamp}.json")
+            shutil.copy(self.filename, backup_path)
+
             os.remove(self.filename)
-            logger.info(f"💾 Создан бэкап: {backup_filename}")
-        
-        return backup_filename
+            logger.info(f"💾 Создан бэкап: {backup_path}")
+
+        return backup_path
     
     def get_stats(self) -> Dict[str, Any]:
         """Получить статистику базы данных"""
