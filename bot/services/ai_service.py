@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Сервис для работы с AI (Google Gemini)
+Сервис для работы с AI (Google Gemini + Groq fallback)
 """
 
 import logging
@@ -12,41 +12,17 @@ try:
 except ImportError:
     GEMINI_AVAILABLE = False
 
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+
 from ..config import Config
 
 logger = logging.getLogger(__name__)
 
-class AIService:
-    """Сервис для работы с AI толкованиями"""
-    
-    def __init__(self, config: Config):
-        """Инициализация AI сервиса"""
-        self.config = config
-        self._initialized = False
-
-        if GEMINI_AVAILABLE and config.gemini_api_key:
-            try:
-                genai.configure(api_key=config.gemini_api_key)
-                self._initialized = True
-                logger.info("🤖 Google Gemini API инициализирован")
-            except Exception as e:
-                logger.error(f"❌ Ошибка инициализации Gemini: {e}")
-        else:
-            if not GEMINI_AVAILABLE:
-                logger.warning("⚠️ Google Generative AI не установлен")
-            else:
-                logger.warning("⚠️ GEMINI_API_KEY не найден")
-    
-    async def generate_interpretation(self, card_name: str, user_name: Optional[str] = None) -> Optional[str]:
-        """Генерировать AI толкование карты"""
-        if not self.ai_available:
-            return None
-        
-        try:
-            # Создать персонализированный промпт
-            user_part = f" для {user_name}" if user_name else ""
-            
-            prompt = f"""Ты мастер Таро с многолетним опытом. Создай персонализированное толкование карты "{card_name}"{user_part}.
+PROMPT_TEMPLATE = """Ты мастер Таро с многолетним опытом. Создай персонализированное толкование карты "{card_name}"{user_part}.
 
 Требования:
 - Тон: мистический, мудрый, но доброжелательный
@@ -64,71 +40,105 @@ class AIService:
 
 Ответь только толкованием, без дополнительных комментариев."""
 
-            # Попробовать разные модели
-            for model_name in self.config.gemini_models:
-                try:
-                    model = genai.GenerativeModel(model_name)
-                    
-                    generation_config = genai.types.GenerationConfig(
-                        temperature=0.8,
-                        max_output_tokens=500,
-                        top_p=0.9,
-                        top_k=40
-                    )
-                    
-                    response = model.generate_content(prompt, generation_config=generation_config)
-                    
-                    if response.text:
-                        interpretation = response.text.strip()
-                        logger.info(f"✅ AI толкование сгенерировано для {card_name} (модель: {model_name})")
-                        return interpretation
-                    
-                except Exception as model_error:
-                    logger.warning(f"⚠️ Модель {model_name} недоступна: {model_error}")
-                    continue
-            
-            logger.error("❌ Все модели Gemini недоступны")
-            return None
-            
-        except Exception as e:
-            self._handle_ai_error(e)
-            return None
-    
-    def _handle_ai_error(self, error: Exception):
-        """Обработка ошибок AI"""
-        error_msg = str(error).lower()
-        
-        if "quota" in error_msg or "limit" in error_msg:
-            logger.warning("⚠️ Gemini API: Превышена квота")
-        elif "api_key" in error_msg or "authentication" in error_msg:
-            logger.error("❌ Gemini API: Проблема с API ключом")
-        elif "safety" in error_msg or "blocked" in error_msg:
-            logger.warning("⚠️ Gemini API: Контент заблокирован фильтрами")
-        elif "404" in error_msg or "not found" in error_msg:
-            logger.error("❌ Gemini API: Модель не найдена. Обновите библиотеку")
+
+class AIService:
+    """Сервис для AI толкований с несколькими провайдерами"""
+
+    def __init__(self, config: Config):
+        self.config = config
+        self._gemini_ready = False
+        self._groq_client: Optional[OpenAI] = None
+
+        if GEMINI_AVAILABLE and config.gemini_api_key:
+            try:
+                genai.configure(api_key=config.gemini_api_key)
+                self._gemini_ready = True
+                logger.info("🤖 Google Gemini API инициализирован")
+            except Exception as e:
+                logger.error(f"❌ Ошибка инициализации Gemini: {e}")
         else:
-            logger.error(f"❌ Ошибка Gemini API: {error}")
-    
+            logger.warning("⚠️ Gemini недоступен (нет библиотеки или ключа)")
+
+        if OPENAI_AVAILABLE and config.groq_api_key:
+            try:
+                self._groq_client = OpenAI(
+                    api_key=config.groq_api_key,
+                    base_url="https://api.groq.com/openai/v1",
+                )
+                logger.info("🤖 Groq API инициализирован")
+            except Exception as e:
+                logger.error(f"❌ Ошибка инициализации Groq: {e}")
+        else:
+            logger.warning("⚠️ Groq недоступен (нет библиотеки или ключа)")
+
+    async def generate_interpretation(self, card_name: str, user_name: Optional[str] = None) -> Optional[str]:
+        """Попробовать Gemini, затем Groq. Вернуть None если оба провайдера недоступны."""
+        user_part = f" для {user_name}" if user_name else ""
+        prompt = PROMPT_TEMPLATE.format(card_name=card_name, user_part=user_part)
+
+        if self._gemini_ready:
+            text = self._try_gemini(prompt, card_name)
+            if text:
+                return text
+
+        if self._groq_client:
+            text = self._try_groq(prompt, card_name)
+            if text:
+                return text
+
+        logger.error("❌ Все AI провайдеры недоступны")
+        return None
+
+    def _try_gemini(self, prompt: str, card_name: str) -> Optional[str]:
+        for model_name in self.config.gemini_models:
+            try:
+                model = genai.GenerativeModel(model_name)
+                generation_config = genai.types.GenerationConfig(
+                    temperature=0.8,
+                    max_output_tokens=1500,
+                    top_p=0.9,
+                    top_k=40,
+                )
+                response = model.generate_content(prompt, generation_config=generation_config)
+                if response.text:
+                    logger.info(f"✅ Gemini толкование для {card_name} (модель: {model_name})")
+                    return response.text.strip()
+            except Exception as e:
+                logger.warning(f"⚠️ Gemini модель {model_name} недоступна: {e}")
+                continue
+        return None
+
+    def _try_groq(self, prompt: str, card_name: str) -> Optional[str]:
+        for model_name in self.config.groq_models:
+            try:
+                response = self._groq_client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.8,
+                    max_tokens=1500,
+                    top_p=0.9,
+                )
+                text = response.choices[0].message.content
+                if text:
+                    logger.info(f"✅ Groq толкование для {card_name} (модель: {model_name})")
+                    return text.strip()
+            except Exception as e:
+                logger.warning(f"⚠️ Groq модель {model_name} недоступна: {e}")
+                continue
+        return None
+
     async def get_available_models(self) -> List[str]:
-        """Получить список доступных моделей"""
-        if not GEMINI_AVAILABLE or not self.config.gemini_api_key:
+        if not self._gemini_ready:
             return []
-        
         try:
-            models = genai.list_models()
-            available_models = []
-            
-            for model in models:
-                if 'generateContent' in model.supported_generation_methods:
-                    available_models.append(model.name)
-            
-            return available_models
-            
+            return [
+                m.name for m in genai.list_models()
+                if 'generateContent' in m.supported_generation_methods
+            ]
         except Exception as e:
             logger.error(f"❌ Ошибка получения моделей: {e}")
             return []
-    
+
     @property
     def ai_available(self) -> bool:
-        """Проверить доступность AI (ключ настроен и библиотека установлена)"""
-        return self._initialized
+        return self._gemini_ready or self._groq_client is not None

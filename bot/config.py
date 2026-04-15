@@ -22,6 +22,7 @@ class Config:
         
         # Загрузить опциональные переменные
         self.gemini_api_key = os.getenv('GEMINI_API_KEY')
+        self.groq_api_key = os.getenv('GROQ_API_KEY')
         
         admin_id_str = os.getenv('ADMIN_ID')
         self.admin_id = None
@@ -43,11 +44,17 @@ class Config:
             'gemini-pro-latest',
             'gemini-2.5-pro',
         ]
+
+        # Приоритет моделей Groq (fallback провайдер)
+        self.groq_models = [
+            'llama-3.3-70b-versatile',
+            'llama-3.1-8b-instant',
+        ]
     
     @property
     def ai_available(self) -> bool:
         """Проверить доступность AI"""
-        return bool(self.gemini_api_key)
+        return bool(self.gemini_api_key or self.groq_api_key)
     
     @property
     def admin_configured(self) -> bool:

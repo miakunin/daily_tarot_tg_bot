@@ -33,17 +33,14 @@ class FortuneService:
         """Вытянуть случайную карту из колоды"""
         return random.choice(self.cards)
     
-    async def generate_fortune_message(self, card: TarotCard, user_name: Optional[str] = None, use_ai: bool = True) -> str:
-        """Сгенерировать сообщение с предсказанием"""
-        # Попробовать получить AI толкование если пользователь хочет и AI доступен
+    async def generate_fortune_message(self, card: TarotCard, user_name: Optional[str] = None, use_ai: bool = True) -> tuple[str, bool]:
+        """Сгенерировать сообщение с предсказанием. Возвращает (текст, использован_ли_AI)."""
         if use_ai and self.ai_service.ai_available:
             ai_interpretation = await self.ai_service.generate_interpretation(card.name, user_name)
-
             if ai_interpretation:
-                return self._format_ai_fortune(card, ai_interpretation)
+                return self._format_ai_fortune(card, ai_interpretation), True
 
-        # Fallback на классическое толкование
-        return self._format_classic_fortune(card)
+        return self._format_classic_fortune(card), False
     
     def _format_ai_fortune(self, card: TarotCard, ai_interpretation: str) -> str:
         """Форматировать AI предсказание"""
@@ -79,7 +76,7 @@ class FortuneService:
         # Сгенерировать предсказание ДО обновления даты,
         # чтобы при ошибке AI пользователь не потерял попытку
         use_ai = user.use_ai and self.ai_service.ai_available
-        fortune_message = await self.generate_fortune_message(card, first_name, use_ai=use_ai)
+        fortune_message, ai_used = await self.generate_fortune_message(card, first_name, use_ai=use_ai)
 
         # Обновить дату и получить статистику за одну операцию (1 read + 1 write)
         updated_stats = self.user_service.record_fortune(user_id, first_name)
@@ -90,7 +87,7 @@ class FortuneService:
             'card': card,
             'message': fortune_message,
             'stats': updated_stats,
-            'ai_used': use_ai
+            'ai_used': ai_used
         }
     
     def get_waiting_message(self, user_name: str, stats: dict) -> str:
