@@ -38,9 +38,9 @@ class Config:
         
         # Приоритет моделей Gemini
         self.gemini_models = [
+            'gemini-2.5-flash-lite',
             'gemini-flash-latest',
             'gemini-2.5-flash',
-            'gemini-2.5-flash-lite',
             'gemini-pro-latest',
             'gemini-2.5-pro',
         ]
