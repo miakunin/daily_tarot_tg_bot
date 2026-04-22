@@ -30,7 +30,7 @@ class BasicHandlers:
         self.user_service.get_user(user.id, user.first_name)
         
         card_stats = get_cards_by_type()
-        ai_status = "🤖 Gemini AI толкования" if self.config.get_status_info()['ai_enabled'] else "📚 Классические"
+        ai_status = "🤖 AI толкования" if self.config.get_status_info()['ai_enabled'] else "📚 Классические"
         
         welcome_message = f"""
 🔮 Добро пожаловать в бот Ежедневных Предсказаний Таро, {user_name}! 🔮
@@ -64,7 +64,7 @@ class BasicHandlers:
         """Обработчик команды /help"""
         status = self.config.get_status_info()
         ai_status = "🤖 включены" if status['ai_enabled'] else "📚 выключены"
-        ai_availability = "" if status['ai_available'] else "\n❌ AI недоступны (нет Gemini API ключа)"
+        ai_availability = "" if status['ai_available'] else "\n❌ AI недоступны (нет Groq API ключа)"
         
         help_message = f"""
 🃏 **Команды бота Предсказаний Таро:**
@@ -88,7 +88,7 @@ class BasicHandlers:
 🔮 Уникальные послания для каждого пользователя
 📊 Статистика ваших обращений к картам
 🎴 Полная колода из 78 карт Таро
-🤖 Gemini AI толкования: {ai_status} (БЕСПЛАТНО!){ai_availability}
+🤖 AI толкования: {ai_status} (БЕСПЛАТНО!){ai_availability}
 
 *Помните: чтения Таро предназначены для развлечения и самоанализа.*
 

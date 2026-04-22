@@ -114,7 +114,7 @@ class FortuneService:
         message = result['message']
         
         # Информация об источнике толкования
-        source_info = "🤖 Персональное Gemini толкование" if result['ai_used'] else "📚 Классическое толкование"
+        source_info = "🤖 Персональное AI толкование" if result['ai_used'] else "📚 Классическое толкование"
         
         # Основное сообщение
         full_message = f"Привет, {user_name}! 🌟\n\n{message}\n\n"

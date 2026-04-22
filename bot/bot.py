@@ -106,6 +106,6 @@ class TarotBot:
         print("🔮 Бот Ежедневных Предсказаний Таро запущен...")
         print("✨ Система ограничений активна: одно предсказание в день!")
         print(f"🎴 Колода содержит: {card_stats['total']} карт ({card_stats['major_arcana']} старших + {card_stats['minor_arcana']} младших)")
-        print(f"🤖 Gemini AI толкования: {ai_status}")
+        print(f"🤖 AI толкования (Groq): {ai_status}")
         print(f"👑 Админ доступ: {admin_status}")
         print("Используйте Ctrl+C чтобы остановить бота")

@@ -21,7 +21,6 @@ class Config:
             raise ValueError("BOT_TOKEN не найден! Убедитесь, что он указан в .env файле")
         
         # Загрузить опциональные переменные
-        self.gemini_api_key = os.getenv('GEMINI_API_KEY')
         self.groq_api_key = os.getenv('GROQ_API_KEY')
         
         admin_id_str = os.getenv('ADMIN_ID')
@@ -36,16 +35,7 @@ class Config:
         self.data_dir = os.path.join('bot', 'data', 'users')
         self.user_data_file = os.path.join(self.data_dir, 'users_data.json')
         
-        # Приоритет моделей Gemini
-        self.gemini_models = [
-            'gemini-2.5-flash-lite',
-            'gemini-flash-latest',
-            'gemini-2.5-flash',
-            'gemini-pro-latest',
-            'gemini-2.5-pro',
-        ]
-
-        # Приоритет моделей Groq (fallback провайдер)
+        # Приоритет моделей Groq
         self.groq_models = [
             'llama-3.3-70b-versatile',
             'llama-3.1-8b-instant',
@@ -54,7 +44,7 @@ class Config:
     @property
     def ai_available(self) -> bool:
         """Проверить доступность AI"""
-        return bool(self.gemini_api_key or self.groq_api_key)
+        return bool(self.groq_api_key)
     
     @property
     def admin_configured(self) -> bool:

@@ -27,7 +27,7 @@ class MessageHandlers:
         try:
             # Определить статус AI для показа в сообщении
             status = self.config.get_status_info()
-            ai_status = "🤖 Gemini AI" if status['ai_enabled'] else "📚 классические"
+            ai_status = "🤖 AI" if status['ai_enabled'] else "📚 классические"
             
             # Базовое сообщение с инструкциями
             help_message = f"""

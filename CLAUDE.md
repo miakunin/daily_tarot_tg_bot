@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Telegram bot for daily Tarot fortune readings with AI interpretations powered by Google Gemini. Written in Russian (UI strings, comments, docs). The bot enforces a one-reading-per-day limit per user.
+A Telegram bot for daily Tarot fortune readings with AI interpretations powered by Groq (Llama 3.3). Written in Russian (UI strings, comments, docs). The bot enforces a one-reading-per-day limit per user.
 
 ## Running the Bot
 
 ```bash
 python -m venv tarot_bot_env && source tarot_bot_env/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # then fill in BOT_TOKEN, optionally GEMINI_API_KEY and ADMIN_ID
+cp .env.example .env   # then fill in BOT_TOKEN, optionally GROQ_API_KEY and ADMIN_ID
 python main.py
 ```
 
@@ -26,13 +26,13 @@ The modular version follows this dependency flow:
 
 ```
 main.py → Config → TarotBot
-                      ├── AIService (Google Gemini)
+                      ├── AIService (Groq, OpenAI-compatible client)
                       ├── UserService → Database (JSON file storage)
                       ├── FortuneService (uses AIService + UserService)
                       └── Handlers (basic, fortune, stats, ai, admin, messages)
 ```
 
-- **Config** (`bot/config.py`): loads env vars via `python-dotenv`. Required: `BOT_TOKEN`. Optional: `GEMINI_API_KEY`, `ADMIN_ID`.
+- **Config** (`bot/config.py`): loads env vars via `python-dotenv`. Required: `BOT_TOKEN`. Optional: `GROQ_API_KEY`, `ADMIN_ID`.
 - **Services** (`bot/services/`): business logic layer. `FortuneService` orchestrates card drawing, AI interpretation (with classic fallback), and user state updates.
 - **Handlers** (`bot/handlers/`): Telegram command handlers. Each handler class receives services via constructor injection. Registered in `TarotBot._setup_handlers()`.
 - **Models** (`bot/models/`): `TarotCard` and `User` dataclasses.
@@ -42,7 +42,7 @@ main.py → Config → TarotBot
 ## Key Libraries
 
 - `python-telegram-bot` v22.1 — async Telegram Bot API wrapper
-- `google-generativeai` — Google Gemini for AI card interpretations
+- `openai` — OpenAI-compatible SDK, pointed at Groq's base URL for AI card interpretations
 - `python-dotenv` — env config
 
 ## Environment Variables
@@ -50,5 +50,5 @@ main.py → Config → TarotBot
 | Variable | Required | Description |
 |---|---|---|
 | `BOT_TOKEN` | Yes | Telegram bot token from @BotFather |
-| `GEMINI_API_KEY` | No | Google Gemini API key for AI readings |
+| `GROQ_API_KEY` | No | Groq API key for AI readings |
 | `ADMIN_ID` | No | Telegram user ID for admin commands (`/reset`, `/adminstats`) |
